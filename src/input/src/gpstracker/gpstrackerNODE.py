@@ -42,7 +42,7 @@ class gpstrackerNODE():
     def __init__(self):
         beacon = 12345
         id = 4
-        serverpublickey = 'publickey_server_test.pem'
+        serverpublickey = '/home/pi/certificates/publickey_server_test.pem'
         
         self.gpsStR, gpsStS = Pipe(duplex = False)
         self.LocalisationSystem = LocalisationSystem(id, beacon, serverpublickey, gpsStS)

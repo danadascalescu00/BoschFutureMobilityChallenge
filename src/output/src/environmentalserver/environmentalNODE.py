@@ -42,8 +42,8 @@ class environmentalNODE():
     def __init__(self):
         beacon = 23456
         id = 120
-        serverpublickey = 'publickey_server_test.pem'
-        clientprivatekey = 'privatekey_client_test.pem'
+        serverpublickey = '/home/pi/certificates/publickey_server_test.pem'
+        clientprivatekey = '/home/pi/certificates/privatekey_client_test.pem'
         
         gpsStR, self.gpsStS = Pipe(duplex = False)
 

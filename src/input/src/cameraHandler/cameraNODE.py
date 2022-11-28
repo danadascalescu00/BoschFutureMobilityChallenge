@@ -34,7 +34,7 @@ import time
 
 import rospy
 
-from cv_bridge       import CvBridge
+# from cv_bridge       import CvBridge
 from sensor_msgs.msg import Image
 
 class cameraNODE():
@@ -49,7 +49,7 @@ class cameraNODE():
         # Image publisher object
         self.image_publisher = rospy.Publisher("/automobile/image_raw", Image, queue_size=1)
         
-        self.bridge = CvBridge()
+        # self.bridge = CvBridge()
         
         # streaming options
         self._stream      =   io.BytesIO()
@@ -91,10 +91,10 @@ class cameraNODE():
         self.camera.resolution      =   (1640,1232)
         self.camera.framerate       =   15
 
-        self.camera.brightness      =   50
-        self.camera.shutter_speed   =   1200
-        self.camera.contrast        =   0
-        self.camera.iso             =   0 # auto
+        # self.camera.brightness      =   50
+        # self.camera.shutter_speed   =   1200
+        # self.camera.contrast        =   0
+        # self.camera.iso             =   0 # auto
 
         self.imgSize                =   (640, 480)    # the actual image size
             
@@ -107,6 +107,16 @@ class cameraNODE():
             res += '_' + str(data)  
 
         return res
+
+    def cv2_to_imgmsg(self, cv_image, encoding):
+        img_msg = Image()
+        img_msg.height = cv_image.shape[0]
+        img_msg.width = cv_image.shape[1]
+        img_msg.encoding = encoding
+        img_msg.is_bigendian = 0
+        img_msg.data = cv_image.tostring()
+        img_msg.step = len(img_msg.data) // img_msg.height # That double line is actually integer division, not a comment
+        return img_msg
     
     def _streams(self):
         """Stream function that actually published the frames into the topic. Certain 
@@ -127,10 +137,10 @@ class cameraNODE():
             # output image and time stamp
             # Note: The sending process can be blocked, when doesn't exist any consumer process and it reaches the limit size.
             try:
-                imageObject = self.bridge.cv2_to_imgmsg(data, "bgr8")
+                imageObject = self.cv2_to_imgmsg(data, "bgr8")
                 imageObject.header.stamp = rospy.Time.now()
                 self.image_publisher.publish(imageObject)
-            except CvBridgeError as e:
+            except Exception as e:
                 print(e)
             
             self._stream.seek(0)
