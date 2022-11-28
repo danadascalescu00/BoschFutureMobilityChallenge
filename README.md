@@ -1,4 +1,4 @@
-# BFMC - Brain ROS Project
+# BFMC - Brain ROS Project - FMI RoadRunner
 
 The project includes the software already present in the Brain project and it gives a good startup point for starting developing your car with ROS. 
 
