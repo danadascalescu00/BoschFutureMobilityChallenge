@@ -13,6 +13,9 @@ class laneDetectionNODE():
         rospy.init_node('laneDetectionNODE', anonymous=False)
         rospy.Subscriber("/automobile/image_raw", Image, self._streams)
 
+        cv.startWindowThread()
+        cv.namedWindow("Test")
+
     def run(self):
         rospy.loginfo('starting laneDetectionNODE')
         rospy.spin()    
@@ -35,7 +38,7 @@ class laneDetectionNODE():
         image = cv.Canny(image,50,150,apertureSize = 3)
         
         cv.imshow('Test', image)
-        if cv.waitKey(1) == 27:
+        if cv.waitKey(20) == 27:
             sys.exit(0)
 
 if __name__ == "__main__":
