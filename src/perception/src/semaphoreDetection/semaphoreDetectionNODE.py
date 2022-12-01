@@ -43,6 +43,7 @@ class semaphoreDetectionNODE():
 
     def _streams(self, msg):
         image = self.imgmsg_to_cv2(msg)
+        image = cv.resize(image, (256, 256), interpolation = cv.INTER_CUBIC)
         # image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
         h, w, c = image.shape
 
