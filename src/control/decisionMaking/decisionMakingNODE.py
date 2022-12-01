@@ -2,14 +2,14 @@
 
 import rospy
 from std_msgs.msg import String
-from utils.msg import laneDetection
+from perception.msg import lineArray
 import time
 
 class decisionMakingNODE:
     def __init__(self):
         rospy.init_node('decisionMakingNODE', anonymous=False)
         self.command_publisher = rospy.Publisher("/automobile/command", String, queue_size=1)
-        self.lane_info = rospy.Subscriber("/lane_info", laneDetection, self._lane)
+        self.lane_info = rospy.Subscriber("/lane_info", lineArray, self._lane)
 
     def move_forward(self):
         command = String()
@@ -22,7 +22,7 @@ class decisionMakingNODE:
     def run(self):
         rospy.loginfo('starting decisionMakingNODE')
         time.sleep(2)
-        self.move_forward()
+        # self.move_forward()
         rospy.spin()
 
     def _lane(self, msg):
