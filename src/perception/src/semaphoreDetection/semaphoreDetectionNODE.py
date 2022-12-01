@@ -9,6 +9,8 @@ from time import sleep
 
 from transformers import YolosFeatureExtractor, YolosForObjectDetection
 
+from threading import Thread
+
 import cv2 as cv
 import torch
 
@@ -23,11 +25,15 @@ class semaphoreDetectionNODE():
         self._object_detection_model = YolosForObjectDetection.from_pretrained('hustvl/yolos-tiny')
         sleep(5)
 
+        self.detection_thread = Thread(target=self.processStream)
+        self.last_image = None
+
         cv.startWindowThread()
         cv.namedWindow("Test Semaphore")
 
     def run(self):
         rospy.loginfo('starting semaphoreDetectionNODE')
+        self.detection_thread.start()
         rospy.spin()    
 
     def imgmsg_to_cv2(self, img_msg):
@@ -43,65 +49,32 @@ class semaphoreDetectionNODE():
 
     def _streams(self, msg):
         image = self.imgmsg_to_cv2(msg)
-        image = cv.resize(image, (256, 256), interpolation = cv.INTER_CUBIC)
-        # image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-        h, w, c = image.shape
+        image = cv.resize(image, (346, 256), interpolation = cv.INTER_CUBIC)
+        self.last_image = image
 
-        inputs = self._feature_extractor(images=image, return_tensors="pt")
-        outputs = self._object_detection_model(**inputs)
-        
-        target_sizes = torch.tensor([(h, w)])
-        results = self._feature_extractor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)[0]
+    def processStream(self):
+        while not rospy.is_shutdown():
+            image = self.last_image
+            h, w, c = image.shape
 
-        for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
-            box = [int(round(i, 2)) for i in box.tolist()]
-            print(
-                f"Detected {self._object_detection_model.config.id2label[label.item()]} with confidence "
-                f"{round(score.item(), 3)} at location {box}"
-            )
-            cv.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 2)
+            inputs = self._feature_extractor(images=image, return_tensors="pt")
+            outputs = self._object_detection_model(**inputs)
+            
+            target_sizes = torch.tensor([(h, w)])
+            results = self._feature_extractor.post_process_object_detection(outputs, threshold=0.9, target_sizes=target_sizes)[0]
 
-        # h, w, _ = image.shape
-        # image = image[(h // 3):, :, :].copy()
-        # interest_field_view = image.copy()
-        # interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
-        # bilateral_filtered_imaged = cv.bilateralFilter(interest_field_view, 10, 75, 75)
-        # edges = cv.Canny(bilateral_filtered_imaged, 50, 150, apertureSize = 3)
+            for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+                box = [int(round(i, 2)) for i in box.tolist()]
+                print(
+                    f"Detected {self._object_detection_model.config.id2label[label.item()]} with confidence "
+                    f"{round(score.item(), 3)} at location {box}"
+                )
+                cv.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 2)
 
-        # # Taking a matrix of size 3 as the kernel
-        # kernel = np.ones((5, 5), np.uint8)
 
-        # dilated_edges = cv.dilate(edges, kernel, iterations=1)
-
-        # # HoughLinesP method to directly obtain line end points
-        
-        # lines_detected = cv.HoughLinesP(
-        #     dilated_edges, # input edge image,
-        #     1, # distance resolution in pixels
-        #     np.pi / 180, # angle resolution in radians
-        #     threshold = 50, # min number of votes for valid line
-        #     minLineLength = 30, # min allowed length of a single line
-        #     maxLineGap = 10, # max allowed gap between line for joining them together
-        # )
-
-        # message = lineArray()
-        # # Iterate over points coordinates
-        # for points in lines_detected:
-        #     x1, y1, x2, y2 = points[0]
-        #     # Draw the lines joining the points
-        #     cv.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-        #     ln = line()
-        #     ln.x1 = x1
-        #     ln.y1 = y1
-        #     ln.x2 = x2
-        #     ln.y2 = y2
-        #     message.lines.append(ln)
-        
-        # self.lane_publisher.publish(message)
-
-        cv.imshow('Test Semaphore', image)
-        if cv.waitKey(20) == 27:
-            sys.exit(0)
+            cv.imshow('Test Semaphore', image)
+            if cv.waitKey(20) == 27:
+                sys.exit(0)
 
 if __name__ == "__main__":
     semaphoreDetection = semaphoreDetectionNODE()

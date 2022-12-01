@@ -15,7 +15,7 @@ class decisionMakingNODE:
         command = String()
         command.data = '{"action":"1","speed": 0.5}'
         self.command_publisher.publish(command)
-        time.sleep(60)
+        time.sleep(10)
         command.data = '{"action":"1","speed": 0.0}'
         self.command_publisher.publish(command)
 
