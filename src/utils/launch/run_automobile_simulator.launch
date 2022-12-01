@@ -9,5 +9,6 @@
     <!-- <node pkg="output" type="environmentalNODE.py" 		name="environmentalNODE"  		output="screen"/>  -->
 
     <node pkg="perception" type="laneDetectionNODE.py" 		name="laneDetectionNODE"  		output="screen"/> 
+    <node pkg="perception" type="semaphoreDetectionNODE.py" name="semaphoreDetectionNODE"  	output="screen"/> 
     <node pkg="control" type="decisionMakingNODE.py" 		name="decisionMakingNODE"  		output="screen"/> 
 </launch>

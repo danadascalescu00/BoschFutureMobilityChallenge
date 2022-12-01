@@ -15,14 +15,14 @@ class decisionMakingNODE:
         command = String()
         command.data = '{"action":"1","speed": 0.5}'
         self.command_publisher.publish(command)
-        time.sleep(5)
+        time.sleep(60)
         command.data = '{"action":"1","speed": 0.0}'
         self.command_publisher.publish(command)
 
     def run(self):
         rospy.loginfo('starting decisionMakingNODE')
-        time.sleep(2)
-        # self.move_forward()
+        time.sleep(10)
+        self.move_forward()
         rospy.spin()
 
     def _lane(self, msg):
