@@ -39,7 +39,8 @@ class laneDetectionNODE():
         image = image[(h // 3):, :, :].copy()
         interest_field_view = image.copy()
         interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
-        edges = cv.Canny(interest_field_view, 50, 150, apertureSize = 3)
+        bilateral_filtered_imaged = cv.bilateralFilter(interest_field_view, 10, 75, 75)
+        edges = cv.Canny(bilateral_filtered_imaged, 50, 150, apertureSize = 3)
 
         # Taking a matrix of size 3 as the kernel
         kernel = np.ones((5, 5), np.uint8)
@@ -53,8 +54,8 @@ class laneDetectionNODE():
             1, # distance resolution in pixels
             np.pi / 180, # angle resolution in radians
             threshold = 80, # min number of votes for valid line
-            minLineLength=50, # min allowed length of a single line
-            maxLineGap=8, # max allowed gap between line for joining them together
+            minLineLength = 30, # min allowed length of a single line
+            maxLineGap = 10, # max allowed gap between line for joining them together
         )
 
         message = lineArray()
