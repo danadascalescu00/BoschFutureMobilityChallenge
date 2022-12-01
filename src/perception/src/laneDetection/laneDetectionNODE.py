@@ -21,8 +21,7 @@ class laneDetectionNODE():
         rospy.spin()    
 
     def imgmsg_to_cv2(self, img_msg):
-        # if img_msg.encoding != "bgr8":
-            # rospy.logerr("This Coral detect node has been hardcoded to the 'bgr8' encoding.  Come change the code if you're actually trying to implement a new camera")
+
         dtype = np.dtype("uint8") # Hardcode to 8 bits...
         dtype = dtype.newbyteorder('>' if img_msg.is_bigendian else '<')
         image_opencv = np.ndarray(shape=(img_msg.height, img_msg.width, 3), # and three channels of data. Since OpenCV works with bgr natively, we don't need to reorder the channels.
@@ -34,8 +33,34 @@ class laneDetectionNODE():
 
     def _streams(self, msg):
         image = self.imgmsg_to_cv2(msg)
-        image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
-        image = cv.Canny(image,50,150,apertureSize = 3)
+        h, w, _ = image.shape
+        image = image[(h // 3):, :, :].copy()
+        interest_field_view = image.copy()
+        interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
+        edges = cv.Canny(interest_field_view, 50, 150, apertureSize = 3)
+
+        # Taking a matrix of size 3 as the kernel
+        kernel = np.ones((5, 5), np.uint8)
+
+        dilated_edges = cv.dilate(edges, kernel, iterations=1)
+
+        # HoughLinesP method to directly obtain line end points
+        lines_list = []
+        lines_detected = cv.HoughLinesP(
+            dilated_edges, # input edge image,
+            1, # distance resolution in pixels
+            np.pi / 180, # angle resolution in radians
+            threshold = 80, # min number of votes for valid line
+            minLineLength=50, # min allowed length of a single line
+            maxLineGap=8, # max allowed gap between line for joining them together
+        )
+
+        # Iterate over points coordinates
+        for points in lines_detected:
+            x1, y1, x2, y2 = points[0]
+            # Draw the lines joining the points
+            cv.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            lines_list.append([(x1, y1), (x2, y2)])
         
         cv.imshow('Test', image)
         if cv.waitKey(20) == 27:
