@@ -4,6 +4,7 @@ import rospy
 import numpy as np
 import sys
 from sensor_msgs.msg import Image
+from perception.msg import lineArray, line
 
 import cv2 as cv
 
@@ -12,6 +13,7 @@ class laneDetectionNODE():
         # TODO docstring
         rospy.init_node('laneDetectionNODE', anonymous=False)
         rospy.Subscriber("/automobile/image_raw", Image, self._streams)
+        self.lane_publisher = rospy.Publisher("/lane_info", lineArray, queue_size=1)
 
         cv.startWindowThread()
         cv.namedWindow("Test")
@@ -45,7 +47,7 @@ class laneDetectionNODE():
         dilated_edges = cv.dilate(edges, kernel, iterations=1)
 
         # HoughLinesP method to directly obtain line end points
-        lines_list = []
+        
         lines_detected = cv.HoughLinesP(
             dilated_edges, # input edge image,
             1, # distance resolution in pixels
@@ -55,13 +57,21 @@ class laneDetectionNODE():
             maxLineGap=8, # max allowed gap between line for joining them together
         )
 
+        message = lineArray()
         # Iterate over points coordinates
         for points in lines_detected:
             x1, y1, x2, y2 = points[0]
             # Draw the lines joining the points
             cv.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            lines_list.append([(x1, y1), (x2, y2)])
+            ln = line()
+            ln.x1 = x1
+            ln.y1 = y1
+            ln.x2 = x2
+            ln.y2 = y2
+            message.lines.append(ln)
         
+        self.lane_publisher.publish(message)
+
         cv.imshow('Test', image)
         if cv.waitKey(20) == 27:
             sys.exit(0)
