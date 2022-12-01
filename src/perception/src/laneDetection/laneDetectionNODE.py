@@ -51,7 +51,7 @@ class laneDetectionNODE():
             dilated_edges, # input edge image,
             1, # distance resolution in pixels
             np.pi / 180, # angle resolution in radians
-            threshold = 80, # min number of votes for valid line
+            threshold = 50, # min number of votes for valid line
             minLineLength = 30, # min allowed length of a single line
             maxLineGap = 10, # max allowed gap between line for joining them together
         )
