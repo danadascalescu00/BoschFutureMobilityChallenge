@@ -26,7 +26,8 @@ class decisionMakingNODE:
         rospy.spin()
 
     def _lane(self, msg):
-        rospy.loginfo(msg)
+        # rospy.loginfo(msg)
+        pass
 
 if __name__ == "__main__":
     decisionMaking = decisionMakingNODE()
