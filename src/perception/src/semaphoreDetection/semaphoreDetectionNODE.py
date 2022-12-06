@@ -51,7 +51,7 @@ class semaphoreDetectionNODE():
     def _streams(self, msg):
         image = self.imgmsg_to_cv2(msg)
         # image = cv.resize(image, (346, 256), interpolation = cv.INTER_CUBIC)
-        image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+        image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
         self.last_image = image
 
     def processStream(self):
@@ -64,7 +64,7 @@ class semaphoreDetectionNODE():
                 outputs = self._object_detection_model(**inputs)
                 
                 target_sizes = torch.tensor([(h, w)])
-                results = self._feature_extractor.post_process_object_detection(outputs, threshold=0.5, target_sizes=target_sizes)[0]
+                results = self._feature_extractor.post_process_object_detection(outputs, threshold=0.7, target_sizes=target_sizes)[0]
 
                 for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
                     box = [int(round(i, 2)) for i in box.tolist()]
@@ -75,20 +75,29 @@ class semaphoreDetectionNODE():
                     cv.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 2)
 
                     if self._object_detection_model.config.id2label[label.item()] == 'traffic light':
-                        print(box)
-                        traffic_light_cropped = image[box[1]:box[3], box[0]:box[2], :].copy()
+                        traffic_light_cropped = image[box[1]:box[3], box[0]:box[2], :]
                         traffic_light_cropped_hsv = cv.cvtColor(traffic_light_cropped, cv.COLOR_BGR2HSV)
 
-                        lower_limit = np.array([160, 50, 50]) # setting the red lower limit
-                        upper_limit = np.array([180, 255, 255]) # setting the red upper limit
-                        red_mask = cv.inRange(traffic_light_cropped_hsv, lower_limit, upper_limit)
+                        kernel = np.ones((5, 5), "uint8")
 
-                        # creating the mask using inRange() function
-                        # this will produce an image where the color of the objects
-                        # falling in the range will turn white and rest will be black
+                        red_lower_limit = np.array([136, 87, 111]) # setting the red lower limit
+                        red_upper_limit = np.array([185, 255, 255]) # setting the red upper limit
+                        red_mask = cv.inRange(traffic_light_cropped_hsv, red_lower_limit, red_upper_limit)
+
+                        red_mask = cv.dilate(red_mask, kernel)
+
+                        green_lower_limit = np.array([25, 52, 72]) # setting the red lower limit
+                        green_upper_limit = np.array([102, 255, 255]) # setting the red upper limit
+                        green_mask = cv.inRange(traffic_light_cropped_hsv, green_lower_limit, green_upper_limit)
+
                         red = cv.bitwise_and(traffic_light_cropped_hsv, traffic_light_cropped_hsv, mask = red_mask)
+                        green = cv.bitwise_and(traffic_light_cropped_hsv, traffic_light_cropped_hsv, mask = green_mask)
 
-                        cv.imshow('Test color change', red)
+                        traffic_light_color_mask = red + green
+                        print("red mean color value: ", np.mean(traffic_light_color_mask[traffic_light_color_mask > (0., 0., 0.)]))
+                        
+                        cv.imshow('Test color change', traffic_light_color_mask)
+                        
 
 
                 cv.imshow('Test Semaphore', image)
