@@ -168,15 +168,15 @@ class laneDetectionNODE():
         roi_image = region_of_interest(edges_image)
 
         # image = image[(h // 3):, :, :].copy()
-        interest_field_view = image.copy()
-        interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
-        bilateral_filtered_imaged = cv.bilateralFilter(interest_field_view, 10, 75, 75)
-        edges = cv.Canny(bilateral_filtered_imaged, 50, 150, apertureSize = 3)
+        # interest_field_view = image.copy()
+        # interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
+        # bilateral_filtered_imaged = cv.bilateralFilter(interest_field_view, 10, 75, 75)
+        # edges = cv.Canny(bilateral_filtered_imaged, 50, 150, apertureSize = 3)
 
         # Taking a matrix of size 3 as the kernel
-        kernel = np.ones((5, 5), np.uint8)
+        # kernel = np.ones((5, 5), np.uint8)
 
-        dilated_edges = cv.dilate(edges, kernel, iterations=1)
+        # dilated_edges = cv.dilate(edges, kernel, iterations=1)
 
         # HoughLinesP method to directly obtain line end points
         lines_detected = detect_segments(roi_image)
