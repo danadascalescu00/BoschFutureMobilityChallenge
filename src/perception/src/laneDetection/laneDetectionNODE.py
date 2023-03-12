@@ -152,6 +152,35 @@ def draw_lines(image, lines, line_color=(0, 255, 255), line_width=10):
     new_image = cv.addWeighted(image, 0.8, line_image, 1, 1)
     return new_image
 
+def detect_crosswalk(image):
+    height, width = image.shape
+
+    vertices = np.array([[
+        (0, height * 0.4),
+        (width, height * 0.4),
+        (width, height * 0.55),
+        (0, height * 0.55),
+    ]], dtype=np.int32)
+
+    mask = np.zeros_like(image)
+    cv.fillPoly(mask, vertices, 255)
+    roi = cv.bitwise_and(image, mask)
+
+    # cv.imshow('Crosswalk', roi)
+    # if cv.waitKey(20) == 27:
+    #     sys.exit(0)
+
+    contours, hierarchy = cv.findContours(roi, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    crosswalk = []
+    for cnt in contours:
+        x,y,w,h = cv.boundingRect(cnt)
+        area = cv.contourArea(cnt)
+        # ratio = h / w
+        if area < 400: # or ratio < 1:
+            continue
+        crosswalk.append(cnt)
+
+    return len(crosswalk) > 0
 
 class laneDetectionNODE():
     def __init__(self):
@@ -162,7 +191,8 @@ class laneDetectionNODE():
 
         cv.startWindowThread()
         cv.namedWindow("Test")
-
+        cv.startWindowThread()
+        # cv.namedWindow("Crosswalk")
 
     def run(self):
         rospy.loginfo('starting laneDetectionNODE')
@@ -189,6 +219,8 @@ class laneDetectionNODE():
         preprocessed_image = preprocess_image(image)
         # Canny edge detection
         edges_image = cv.Canny(preprocessed_image, low_threshold, high_threshold)
+        is_crosswalk = detect_crosswalk(edges_image)
+
         # extract the region of interest
         roi_image = region_of_interest(edges_image)
 
@@ -215,8 +247,9 @@ class laneDetectionNODE():
             ln.x2 = x2
             ln.y2 = y2
             message.lines.append(ln)
+            message.is_crosswalk = 1 if is_crosswalk else 0
         
-        # self.lane_publisher.publish(message)
+        self.lane_publisher.publish(message)
 
         if lane_lines is not []:
             cv.imshow('Test', lines_image)

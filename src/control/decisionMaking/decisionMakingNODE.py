@@ -14,6 +14,8 @@ Kp = 1
 Ki = 0
 Kd = 0
 
+last_crosswalk_detection = 0
+
 class decisionMakingNODE:
     def __init__(self):
         self.debug = True
@@ -24,6 +26,7 @@ class decisionMakingNODE:
         self.last_lanes = []
         self.midlane = []
         self.last_frame = None
+        self.is_crosswalk = 0
         self.midlane_history = [(320, 400, 320, 50), (320, 400, 320, 50), (320, 400, 320, 50), (320, 400, 320, 50), (320, 400, 320, 50)] 
         if self.debug:
             rospy.Subscriber("/automobile/image_raw", Image, self._streams)
@@ -87,8 +90,15 @@ class decisionMakingNODE:
         integral = 0
         previous_error = 0
         last_time = round(time.time()*1000) - 20
+        last_crosswalk_detection = 0
         
         while not rospy.is_shutdown():
+            if self.is_crosswalk == 1 and round(time.time()*1000) - last_crosswalk_detection > 2000:
+                last_crosswalk_detection = round(time.time()*1000)
+                self.set_speed(0.2)
+                time.sleep(2)
+                self.set_speed(0.5)
+
             if self.last_lanes:
                 if len(self.last_lanes) == 1:
                     ln = self.last_lanes
@@ -101,6 +111,8 @@ class decisionMakingNODE:
                 
                 print(self.midlane)
                 error = 320 - ((self.midlane[0] + self.midlane[2]) / 2) # 320 is the half of the width of the frame
+                # if abs(error) < 30:
+                    # error = round(atan(output / m_y), 2)
                 proportional = error
                 dt = (round(time.time()*1000) - last_time)
                 last_time = round(time.time()*1000)
@@ -136,6 +148,9 @@ class decisionMakingNODE:
 
     def _lane(self, msg):
         self.last_lanes = msg.lines
+        self.is_crosswalk = msg.is_crosswalk
+        if self.is_crosswalk:
+            print("Detected crosswalk")
         ln = self.last_lanes
         if len(self.last_lanes) == 2:
             self.midlane_history.pop()
