@@ -25,6 +25,9 @@ rho = 1             # distance precision in pixel
 angle = np.pi / 180 # angular precision in radian
 min_threshold = 10  # min number of votes for valid line
 
+# Rectangular Kernel
+rectangular_kernel = cv.getStructuringElement(cv.MORPH_RECT, (7,7))
+
 
 """
     Functions definitions and declarations
@@ -35,8 +38,10 @@ def preprocess_image(image):
     gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     # remove noise with gaussian blur
     denoised_image = cv.GaussianBlur(gray_image, (kernel_size, kernel_size), 0)
+    # dilate the denoised image
+    dilated_image = cv.dilate(denoised_image, rectangular_kernel, iterations=1)
 
-    return denoised_image
+    return dilated_image
 
 
 def region_of_interest(edges_image):
@@ -45,10 +50,10 @@ def region_of_interest(edges_image):
 
     # only focus on the bottom half of the screen
     polygon = np.array([[
-        (0, height * .5),
-        (width, height * .5),
-        (width, height),
-        (0, height)
+        (0, height * .3),
+        (width, height * .3),
+        (width, height * .925),
+        (0, height * .925)
     ]], np.int32)
 
     cv.fillPoly(mask, polygon, match_mask_color)
@@ -87,9 +92,10 @@ def average_slope_intercept(frame, line_segments):
     height, width, _ = frame.shape
     left_fit, right_fit = [], []
 
-    boundary = 1 / 3
-    left_region_boundary = width * (1 - boundary) 
-    right_region_boundary = width * boundary
+    boundary_left = 0.35
+    boundary_right = 0.35
+    left_region_boundary = width * (1 - boundary_left) 
+    right_region_boundary = width * boundary_right
 
     for line_segment in line_segments:
         for x1, y1, x2, y2 in line_segment:
@@ -181,11 +187,11 @@ class laneDetectionNODE():
         # HoughLinesP method to directly obtain line end points
         lines_detected = detect_segments(roi_image)
         lane_lines = average_slope_intercept(image, lines_detected)
-        line_image = draw_lines(image, lane_lines)
+        lines_image = draw_lines(image, lane_lines)
 
         message = lineArray()
         # Iterate over points coordinates
-        for points in lines_detected:
+        for points in lane_lines:
             x1, y1, x2, y2 = points[0]
             # Draw the lines joining the points
             cv.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
@@ -198,7 +204,7 @@ class laneDetectionNODE():
         
         self.lane_publisher.publish(message)
 
-        cv.imshow('Test', line_image)
+        cv.imshow('Test', lines_image)
         if cv.waitKey(20) == 27:
             sys.exit(0)
 
