@@ -39,7 +39,7 @@ def preprocess_image(image):
     # remove noise with gaussian blur
     denoised_image = cv.GaussianBlur(gray_image, (kernel_size, kernel_size), 0)
     # dilate the denoised image
-    dilated_image = cv.dilate(denoised_image, rectangular_kernel, iterations=1)
+    dilated_image = cv.dilate(denoised_image, rectangular_kernel, iterations=2)
 
     return dilated_image
 
@@ -60,8 +60,8 @@ def region_of_interest(edges):
     #     ((width * (1 - (1 - trap_bottom_width) / 2)), height * 0.9),
     # ]], dtype=np.int32)
     vertices = np.array([[
-        (width * 0.35, height * 0.25),
-        (width * 0.65, height * 0.25),
+        (width * 0.4, height * 0.425),
+        (width * 0.65, height * 0.425),
         (width * 0.95, height * 0.9),
         (width * 0.05, height * 0.9),
     ]], dtype=np.int32)
@@ -77,7 +77,7 @@ def region_of_interest(edges):
 def detect_segments(cropped_edges_image):
     line_segments = cv.HoughLinesP(cropped_edges_image, rho, angle,
                                     min_threshold, np.array([]),
-                                    minLineLength=15, # min allowed length of a single line
+                                    minLineLength=20, # min allowed length of a single line
                                     maxLineGap=15 # max allowed gap between line for joining them together
                                     )
     return line_segments
@@ -106,7 +106,7 @@ def average_slope_intercept(frame, line_segments):
     left_fit, right_fit = [], []
 
     boundary_left = 0.35
-    boundary_right = 0.35
+    boundary_right = 0.3
     left_region_boundary = width * (1 - boundary_left) 
     right_region_boundary = width * boundary_right
 
@@ -153,37 +153,6 @@ def draw_lines(image, lines, line_color=(0, 255, 255), line_width=10):
     return new_image
 
 
-def detect_crosswalk(image):
-    height, width = image.shape
-
-    vertices = np.array([[
-        (0, height * 0.4),
-        (width, height * 0.4),
-        (width, height * 0.55),
-        (0, height * 0.55),
-    ]], dtype=np.int32)
-
-    mask = np.zeros_like(image)
-    cv.fillPoly(mask, vertices, 255)
-    roi = cv.bitwise_and(image, mask)
-
-    # cv.imshow('Crosswalk', roi)
-    # if cv.waitKey(20) == 27:
-    #     sys.exit(0)
-
-    contours, hierarchy = cv.findContours(roi, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-    crosswalk = []
-    for cnt in contours:
-        x,y,w,h = cv.boundingRect(cnt)
-        area = cv.contourArea(cnt)
-        # ratio = h / w
-        if area < 400: # or ratio < 1:
-            continue
-        crosswalk.append(cnt)
-
-    return len(crosswalk) > 0
-
-
 class laneDetectionNODE():
     def __init__(self):
         # TODO docstring
@@ -193,8 +162,7 @@ class laneDetectionNODE():
 
         cv.startWindowThread()
         cv.namedWindow("Test")
-        cv.startWindowThread()
-        cv.namedWindow("Crosswalk")
+
 
     def run(self):
         rospy.loginfo('starting laneDetectionNODE')
@@ -221,7 +189,6 @@ class laneDetectionNODE():
         preprocessed_image = preprocess_image(image)
         # Canny edge detection
         edges_image = cv.Canny(preprocessed_image, low_threshold, high_threshold)
-        is_crosswalk = detect_crosswalk(edges_image)
         # extract the region of interest
         roi_image = region_of_interest(edges_image)
 
