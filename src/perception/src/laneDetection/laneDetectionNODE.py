@@ -17,8 +17,8 @@ match_mask_color = 255 # value of lines' color
 # define range of black color in HSV color space
 
 # define Canny edge detection parameters
-low_threshold = 100
-high_threshold = 200
+low_threshold = 200
+high_threshold = 400
 
 # Hough transform parameters
 rho = 1             # distance precision in pixel
@@ -44,22 +44,34 @@ def preprocess_image(image):
     return dilated_image
 
 
-def region_of_interest(edges_image):
-    height, width = edges_image.shape
-    mask = np.zeros_like(edges_image)
+def region_of_interest(edges):
+    height, width = edges.shape
+    mask = np.zeros_like(edges)
 
-    # only focus on the bottom half of the screen
-    polygon = np.array([[
-        (0, height * .3),
-        (width, height * .3),
-        (width, height * .925),
-        (0, height * .925)
-    ]], np.int32)
+    # define the vertices of the trapezoid
+    trap_top_width = 1/3 # width of the top of the trapezoid (in fraction of the frame width)
+    trap_bottom_width = 2/3 # width of the bottom of the trapezoid (in fraction of the frame width)
+    trap_height = height * 1/2 # height of the trapezoid (in fraction of the frame height)
+    trap_top_xoffset = (1 - trap_top_width) / 2 # x-offset of the top of the trapezoid (in fraction of the frame width)
+    # vertices = np.array([[
+    #     ((width * trap_top_xoffset), height * (1 - trap_height)),
+    #     ((width * (1 - trap_top_xoffset)), height * (1 - trap_height)),
+    #     ((width * (1 - trap_bottom_width) / 2), height * 0.9),
+    #     ((width * (1 - (1 - trap_bottom_width) / 2)), height * 0.9),
+    # ]], dtype=np.int32)
+    vertices = np.array([[
+        (width * 0.35, height * 0.25),
+        (width * 0.65, height * 0.25),
+        (width * 0.95, height * 0.9),
+        (width * 0.05, height * 0.9),
+    ]], dtype=np.int32)
 
-    cv.fillPoly(mask, polygon, match_mask_color)
-    masked_image = cv.bitwise_and(edges_image, mask)
+    # only focus on the trapezoid region
+    mask = np.zeros_like(edges)
+    cv.fillPoly(mask, vertices, 255)
+    masked_edges = cv.bitwise_and(edges, mask) 
 
-    return masked_image
+    return masked_edges
 
 
 def detect_segments(cropped_edges_image):
@@ -86,6 +98,7 @@ def make_points(frame, line):
 
 def average_slope_intercept(frame, line_segments):
     lane_lines = []
+    lines_kept = [] # DO NOT REMOVE - DEBUGGING
     if line_segments is None:
         return lane_lines
 
@@ -100,10 +113,16 @@ def average_slope_intercept(frame, line_segments):
     for line_segment in line_segments:
         for x1, y1, x2, y2 in line_segment:
             if x1 == x2: # slope = inf
+                # TODO logging message
                 continue
 
             fit = np.polyfit((x1, x2), (y1, y2), 1)
             slope, intercept = fit[0], fit[1]
+
+            if abs(slope) < 0.1: # skip line segments with slopes close to  - horizontal lines
+                continue
+
+            lines_kept.append(line_segment)
             if slope < 0:
                 if x1 < left_region_boundary and x2 < left_region_boundary:
                     left_fit.append((slope, intercept))
@@ -120,7 +139,7 @@ def average_slope_intercept(frame, line_segments):
     if len(right_fit) > 0:
         lane_lines.append(make_points(frame, right_fit_average))
 
-    return lane_lines
+    return lane_lines, lines_kept
 
 
 def draw_lines(image, lines, line_color=(0, 255, 255), line_width=10):
@@ -173,21 +192,16 @@ class laneDetectionNODE():
         # extract the region of interest
         roi_image = region_of_interest(edges_image)
 
-        # image = image[(h // 3):, :, :].copy()
-        # interest_field_view = image.copy()
-        # interest_field_view = cv.cvtColor(interest_field_view, cv.COLOR_RGB2GRAY)
-        # bilateral_filtered_imaged = cv.bilateralFilter(interest_field_view, 10, 75, 75)
-        # edges = cv.Canny(bilateral_filtered_imaged, 50, 150, apertureSize = 3)
-
-        # Taking a matrix of size 3 as the kernel
-        # kernel = np.ones((5, 5), np.uint8)
-
-        # dilated_edges = cv.dilate(edges, kernel, iterations=1)
-
         # HoughLinesP method to directly obtain line end points
         lines_detected = detect_segments(roi_image)
-        lane_lines = average_slope_intercept(image, lines_detected)
-        lines_image = draw_lines(image, lane_lines)
+        lane_lines, lines_kept = average_slope_intercept(image, lines_detected)
+
+        lines_detected_image = None
+        if lines_kept is not []:
+            lines_detected_image = draw_lines(image, lines_kept)
+        lines_image = None
+        if lane_lines is not []:
+            lines_image = draw_lines(image, lane_lines)
 
         message = lineArray()
         # Iterate over points coordinates
@@ -202,12 +216,12 @@ class laneDetectionNODE():
             ln.y2 = y2
             message.lines.append(ln)
         
-        self.lane_publisher.publish(message)
+        # self.lane_publisher.publish(message)
 
-        cv.imshow('Test', lines_image)
-        if cv.waitKey(20) == 27:
-            sys.exit(0)
-
+        if lane_lines is not []:
+            cv.imshow('Test', lines_image)
+            if cv.waitKey(20) == 27:
+                sys.exit(0)
 
 
 if __name__ == "__main__":
