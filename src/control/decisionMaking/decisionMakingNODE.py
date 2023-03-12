@@ -93,19 +93,20 @@ class decisionMakingNODE:
         last_crosswalk_detection = 0
         
         while not rospy.is_shutdown():
-            if self.is_crosswalk == 1 and round(time.time()*1000) - last_crosswalk_detection > 2000:
+            if self.is_crosswalk == 1 and round(time.time()*1000) - last_crosswalk_detection > 4000:
                 last_crosswalk_detection = round(time.time()*1000)
-                self.set_speed(0.2)
-                time.sleep(2)
+                self.set_speed(0.1)
+
+            if round(time.time()*1000) - last_crosswalk_detection > 4000:
                 self.set_speed(0.5)
 
             if self.last_lanes:
                 if len(self.last_lanes) == 1:
                     ln = self.last_lanes
                     if ln[0].x1 < 320: # linie din stanga
-                        self.midlane = (ln[0].x1 + 200, ln[0].y1, ln[0].x2 + 200, ln[0].y2)
+                        self.midlane = (ln[0].x1 + 300, ln[0].y1, ln[0].x2 + 300, ln[0].y2)
                     else: # linie din dreapta
-                        self.midlane = (ln[0].x1 - 200, ln[0].y1, ln[0].x2 - 200, ln[0].y2)
+                        self.midlane = (ln[0].x1 - 300, ln[0].y1, ln[0].x2 - 300, ln[0].y2)
                 elif len(self.last_lanes) == 0:
                         self.midlane = (320, 480, 320, 0)   
                 
@@ -140,6 +141,10 @@ class decisionMakingNODE:
                     
                     self.last_frame = cv2.circle(self.last_frame, (int((self.midlane[0] + self.midlane[2]) / 2),int((self.midlane[1] + self.midlane[3]) / 2)), radius=3, color=(0, 0, 255), thickness=-2)
                     self.last_frame = cv2.circle(self.last_frame, (320,int((self.midlane[1] + self.midlane[3]) / 2)), radius=3, color=(255, 0, 255), thickness=-2)
+                    
+                    # if self.is_crosswalk == 1:
+                        # image = cv2.putText(image, 'OpenCV', org, font,fontScale, color, thickness, cv2.LINE_AA)
+
                     cv2.imshow("Debug decision making", self.last_frame)
                     if cv2.waitKey(20) == 27:
                         sys.exit(0)
