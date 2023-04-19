@@ -27,9 +27,9 @@ The control module utilises the lane and object detection information to make in
 
 * [ROS Wiki](http://wiki.ros.org/)
 * [ROS Tutorials](http://wiki.ros.org/ROS/Tutorials)
-    * [Creating Packages and Nodes](https://industrial-training-master.readthedocs.io/en/melodic/_source/session1/Creating-a-ROS-Package-and-Node.html)
-    * [Writing a Simple Publisher and Subscriber (Python)](http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29)
-    * [Writing Publisher/Subscriber with Parameters, Dynamic Reconfigure and Custom Messages (Python)](http://wiki.ros.org/ROSNodeTutorialPython)
+  * [Creating Packages and Nodes](https://industrial-training-master.readthedocs.io/en/melodic/_source/session1/Creating-a-ROS-Package-and-Node.html)
+  * [Writing a Simple Publisher and Subscriber (Python)](http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29)
+  * [Writing Publisher/Subscriber with Parameters, Dynamic Reconfigure and Custom Messages (Python)](http://wiki.ros.org/ROSNodeTutorialPython)
 
 * [ROS Answers](https://answers.ros.org/)
 
