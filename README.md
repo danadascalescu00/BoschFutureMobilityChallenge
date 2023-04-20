@@ -9,7 +9,7 @@ The implementation of the perception module is based on two ROS nodes, which can
 ### Lane Detection and Crosswalk Detection
 Our code performs lane detection by applying a trapezoidal region of interest and a preprocessing pipeline that includes converting the image to grayscale, an edge detector, applying a Gaussian filter to reduce noise, and using a dilation filter to enhance edges. We then apply the Hough Transform algorithm to detect the lines in the image and calculate the average slope intercept to represent the road markings.
 
-Additionally, our code contains a method called detect_crosswalk() that detects the presence of a crosswalk in an input image. This method creates a region of interest in the lower part of the image and detects contours using cv.findContours(). It then filters out small contours and checks if the number of remaining contours is greater than 2, indicating the presence of a crosswalk.
+Additionally, our code contains a method called `detect_crosswalk()` that detects the presence of a crosswalk in an input image. This method creates a region of interest in the lower part of the image and detects contours using cv.findContours(). It then filters out small contours and checks if the number of remaining contours is greater than 2, indicating the presence of a crosswalk.
 
 These methods can be used together to provide a more comprehensive understanding of the vehicle's environment. 
 
