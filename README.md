@@ -4,7 +4,7 @@ This GitHub repository contains a fork of the [BFCM 2022](https://github.com/ECC
 
 ## Implementation Details
 
-![Architecture](https://github.com/danadascalescu00/BoschFutureMobilityChallenge)
+![Architecture](https://github.com/danadascalescu00/BoschFutureMobilityChallenge/blob/main/images/BFMC2023-FMI_RoadRunner-Architecture.jpg)
 
 ### Perception
 
