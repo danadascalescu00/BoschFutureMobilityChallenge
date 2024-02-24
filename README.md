@@ -1,6 +1,8 @@
 # BFMC - Brain ROS Project - FMI RoadRunner
 
-This GitHub repository contains a fork of the [BFCM 2022](https://github.com/ECC-BFMC/Brain_ROS) software with pre-given packages and examples demonstrating how to communicate with them. The pre-installed SD card is already configured to communicate with demo scripts within the ECC-BFCM/Computer project, and these scripts are set to run at start-up. However, if you wish to remove this configuration for development purposes, simply clean out the /etc/rc.local file. In addition to the main version, the repository also includes custom ROS nodes for line detection, semaphore, person detection, and traffic sign detection.
+This GitHub repository contains a fork of the [BFCM 2022](https://github.com/ECC-BFMC/Brain_ROS) software with pre-given packages and examples demonstrating how to communicate with them. The pre-installed SD card is already configured to communicate with demo scripts within the ECC-BFCM/Computer project, and these scripts are set to run at start-up. However, if you wish to remove this configuration for development purposes, simply clean out the /etc/rc.local file.
+
+_In addition to the main version, the repository also includes custom ROS nodes for line detection, semaphore, person detection, and traffic sign detection added by our team._
 
 ## Implementation Details
 
